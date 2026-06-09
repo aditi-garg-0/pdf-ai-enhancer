@@ -1,0 +1,247 @@
+{
+  "processGroups": [
+    {
+      "processGroupId": "P1",
+      "processGroupName": "P1",
+      "enabled": true,
+      "tasks": [
+        {
+          "taskId": "P1-T01",
+          "taskName": "A",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T02",
+          "taskName": "B",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T03",
+          "taskName": "C",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T04",
+          "taskName": "D",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T05",
+          "taskName": "E",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T06",
+          "taskName": "F",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T07",
+          "taskName": "G",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T08",
+          "taskName": "H",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T09",
+          "taskName": "I",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T10",
+          "taskName": "J",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T11",
+          "taskName": "K",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T12",
+          "taskName": "L",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T13",
+          "taskName": "M",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T14",
+          "taskName": "N",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T15",
+          "taskName": "O",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T16",
+          "taskName": "P",
+          "enabled": true
+        },
+        {
+          "taskId": "P1-T17",
+          "taskName": "Q",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "processGroupId": "P2",
+      "processGroupName": "P2",
+      "enabled": true,
+      "tasks": [
+        {
+          "taskId": "P2-T01",
+          "taskName": "R",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T02",
+          "taskName": "S",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T03",
+          "taskName": "T",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T04",
+          "taskName": "U",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T05",
+          "taskName": "V",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T06",
+          "taskName": "W",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T07",
+          "taskName": "X",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T08",
+          "taskName": "Y",
+          "enabled": true
+        },
+        {
+          "taskId": "P2-T09",
+          "taskName": "Z",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "processGroupId": "P3",
+      "processGroupName": "P3",
+      "enabled": true,
+      "tasks": [
+        {
+          "taskId": "P3-T01",
+          "taskName": "AA",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T02",
+          "taskName": "AB",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T03",
+          "taskName": "AC",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T04",
+          "taskName": "AD",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T05",
+          "taskName": "AE",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T06",
+          "taskName": "AF",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T07",
+          "taskName": "AG",
+          "enabled": true
+        },
+        {
+          "taskId": "P3-T08",
+          "taskName": "AH",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "processGroupId": "P4",
+      "processGroupName": "P4",
+      "enabled": true,
+      "tasks": [
+        {
+          "taskId": "P4-T01",
+          "taskName": "AI",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T02",
+          "taskName": "AJ",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T03",
+          "taskName": "AK",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T04",
+          "taskName": "AL",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T05",
+          "taskName": "AM",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T06",
+          "taskName": "AN",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T07",
+          "taskName": "AO",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T08",
+          "taskName": "AP",
+          "enabled": true
+        },
+        {
+          "taskId": "P4-T09",
+          "taskName": "AQ",
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}
