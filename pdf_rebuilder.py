@@ -1,19 +1,6 @@
-"""
-pdf_rebuilder.py
-================
-Stage 5 (final): Rebuild the enhanced PDF.
-
-Takes all processed artifacts and reassembles them into a
-publication-quality output PDF:
-
-  - Enhanced images/diagrams (raster or SVG vector)
-  - Invisible searchable text layer (native + OCR-corrected)
-  - Reconstructed tables as proper PDF table objects
-  - Restored bookmarks / TOC
-  - Linearization (web-optimized / fast-open)
-  - Optional compression + PDF/A archival compliance
-  - Quality comparison report (SSIM/PSNR per page)
-"""
+# pdf_rebuilder.py
+# Full replacement with rotation-aware transforms, duplicate-image skipping,
+# and PyMuPDF prerotate/prerotate compatibility guard.
 
 from __future__ import annotations
 
@@ -151,19 +138,16 @@ class PDFRebuilder:
         new_doc.set_metadata(meta)
 
         # Save
-        save_opts = dict(
-            deflate       = self.cfg.compress_output,
-            garbage       = 4 if self.cfg.optimize_output else 0,
-            clean         = self.cfg.optimize_output,
-            linear        = True,   # Web-optimized (fast open)
+        new_doc.save(
+            str(output_path),
+            garbage=4,
+            deflate=True,
         )
-        new_doc.save(str(output_path), **save_opts)
         new_doc.close()
 
         # Post-process with pikepdf (linearize + repair)
         if PIKEPDF_AVAILABLE and self.cfg.optimize_output:
             self._pikepdf_optimize(output_path)
-
         report.processing_time_s = time.time() - t_start
 
         if self.cfg.save_report:
@@ -176,6 +160,31 @@ class PDFRebuilder:
             f"{report.total_diagrams} diagrams vectorized"
         )
         return report
+
+    # ── Heuristics ────────────────────────────────────────────
+
+    def _should_skip_block(self, page_info: PageInfo, img_block: ImageBlock) -> bool:
+        """
+        Heuristic to decide whether an image block is already present in the
+        full-page rendered image and should be skipped to avoid duplication.
+        Prefer setting img_block.from_rendered in the extractor for deterministic behavior.
+        """
+        # If extractor explicitly marked it as coming from the rendered image, skip.
+        if getattr(img_block, "from_rendered", False):
+            return True
+
+        # If there's no rendered image, don't skip.
+        if page_info.rendered_image is None:
+            return False
+
+        # If the image block covers a large fraction of the page, assume it's part of the render.
+        page_area = page_info.width * page_info.height
+        b = img_block.bbox
+        block_area = max((b.x1 - b.x0) * (b.y1 - b.y0), 0.0)
+        if page_area > 0 and (block_area / page_area) > 0.6:
+            return True
+
+        return False
 
     # ── Per-page build ────────────────────────────────────────
 
@@ -190,7 +199,28 @@ class PDFRebuilder:
 
         # Scale up for higher output DPI
         scale = self.cfg.output_dpi / 72.0
+
+        # Create new page sized for scaled output
         new_page = new_doc.new_page(width=w * scale, height=h * scale)
+
+        # Determine page rotation (0 if not provided)
+        rotation = getattr(page_info, "rotation", 0) or 0
+
+        # Build a single matrix that scales then rotates to map source coords -> new_page visual coords
+        m = fitz.Matrix(scale, scale)
+        # Compatibility: some PyMuPDF versions expose 'prerotate', others 'preRotate'
+        if hasattr(m, "prerotate"):
+            try:
+                transform = m.prerotate(rotation)
+            except Exception:
+                transform = m
+        elif hasattr(m, "preRotate"):
+            try:
+                transform = m.preRotate(rotation)
+            except Exception:
+                transform = m
+        else:
+            transform = m
 
         # ── Background: full-page rasterized render ───────────
         if page_info.rendered_image is not None:
@@ -200,6 +230,7 @@ class PDFRebuilder:
             if is_scanned:
                 bg_img = self.enhancer.enhance_page_render(bg_img)
 
+            # Insert the full-page background using the full target rect
             self._insert_image_on_page(
                 new_page, bg_img,
                 fitz.Rect(0, 0, w * scale, h * scale)
@@ -208,6 +239,13 @@ class PDFRebuilder:
         # ── Enhanced embedded images ──────────────────────────
         for img_block in page_info.image_blocks:
             try:
+                # Skip blocks that are effectively part of the full-page render
+                if self._should_skip_block(page_info, img_block):
+                    logger.debug(
+                        f"  Skipping image block on p{page_info.page_num} (covered by render)"
+                    )
+                    continue
+
                 # Classify
                 img_block = self.diagrams.classify_image(img_block)
 
@@ -219,7 +257,7 @@ class PDFRebuilder:
                 if img_block.is_diagram:
                     d_result = self.diagrams.analyze(img_block)
                     if d_result.svg_bytes and d_result.use_vector and CAIROSVG_AVAILABLE:
-                        # Convert SVG → PDF-embeddable image
+                        # Convert SVG → PNG sized to enhanced image dimensions
                         png_bytes = cairosvg.svg2png(
                             bytestring = d_result.svg_bytes,
                             output_width  = enhanced.width,
@@ -232,14 +270,35 @@ class PDFRebuilder:
                 else:
                     img_to_embed = enhanced.image_bytes
 
-                # Position on page (scale coords)
-                bbox = fitz.Rect(
-                    img_block.bbox.x0 * scale,
-                    img_block.bbox.y0 * scale,
-                    img_block.bbox.x1 * scale,
-                    img_block.bbox.y1 * scale,
+                # Position on page: transform the original bbox using the combined matrix
+                src_rect = fitz.Rect(
+                    img_block.bbox.x0,
+                    img_block.bbox.y0,
+                    img_block.bbox.x1,
+                    img_block.bbox.y1,
                 )
-                new_page.insert_image(bbox, stream=img_to_embed)
+
+                # Apply transform: matrix * rect -> visual coordinates on new_page
+                try:
+                    dst_rect = transform * src_rect
+                except Exception:
+                    # Fallback: manually scale coords if transform multiplication not supported
+                    dst_rect = fitz.Rect(
+                        src_rect.x0 * scale,
+                        src_rect.y0 * scale,
+                        src_rect.x1 * scale,
+                        src_rect.y1 * scale,
+                    )
+
+                # Defensive clamp to page rect
+                dst_rect = dst_rect & fitz.Rect(0, 0, w * scale, h * scale)
+
+                logger.debug(
+                    f"  Embedding image p{page_info.page_num} src={src_rect} dst={dst_rect} rot={rotation} scale={scale}"
+                )
+
+                # Insert image bytes into the computed rectangle
+                new_page.insert_image(dst_rect, stream=img_to_embed)
 
             except Exception as e:
                 logger.warning(f"  Image embed failed p{page_info.page_num}: {e}")
@@ -251,7 +310,31 @@ class PDFRebuilder:
         # ── Tables ────────────────────────────────────────────
         for table in page_info.table_blocks:
             try:
-                self._embed_table(new_page, table, scale)
+                # Transform table bbox similarly before embedding
+                src_t = fitz.Rect(table.bbox.x0, table.bbox.y0, table.bbox.x1, table.bbox.y1)
+                try:
+                    dst_t = transform * src_t
+                except Exception:
+                    dst_t = fitz.Rect(
+                        src_t.x0 * scale,
+                        src_t.y0 * scale,
+                        src_t.x1 * scale,
+                        src_t.y1 * scale,
+                    )
+
+                # Convert transformed rect back into a TableBlock-like bbox for _embed_table
+                scaled_table = TableBlock(
+                    bbox = type(table.bbox)(
+                        x0 = dst_t.x0,
+                        y0 = dst_t.y0,
+                        x1 = dst_t.x1,
+                        y1 = dst_t.y1,
+                    ),
+                    data = table.data,
+                )
+                # _embed_table expects a scale factor; since we've already transformed coords,
+                # call with scale=1.0 and let _embed_table use the bbox directly.
+                self._embed_table(new_page, scaled_table, scale=1.0)
                 pq.tables_embedded += 1
             except Exception as e:
                 logger.debug(f"  Table embed failed p{page_info.page_num}: {e}")
@@ -318,6 +401,8 @@ class PDFRebuilder:
     ) -> None:
         """
         Draw table as text annotations with grid lines.
+        Expects table.bbox to already be in page coordinates (i.e., transformed if needed).
+        If scale != 1.0, the bbox will be scaled by that factor.
         """
         if not table.data or not table.data[0]:
             return
@@ -326,6 +411,7 @@ class PDFRebuilder:
         n_rows = len(rows)
         n_cols = max(len(r) for r in rows)
 
+        # If scale was provided, apply it to bbox coordinates
         x0 = table.bbox.x0 * scale
         y0 = table.bbox.y0 * scale
         x1 = table.bbox.x1 * scale
@@ -363,10 +449,22 @@ class PDFRebuilder:
     # ── Image insertion ───────────────────────────────────────
 
     def _insert_image_on_page(
-        self, page: fitz.Page, img: np.ndarray, rect: fitz.Rect
+        self, page: fitz.Page, img: np.ndarray | bytes, rect: fitz.Rect
     ) -> None:
+        """
+        Insert a numpy image (H,W,3/4) or raw bytes into the page rect. Convert to PNG bytes if needed.
+        """
+        # If img is already bytes (e.g., PNG bytes), accept that too
+        if isinstance(img, (bytes, bytearray)):
+            page.insert_image(rect, stream=bytes(img))
+            return
+
         pil = Image.fromarray(img.astype(np.uint8))
+        # Flatten alpha if present to avoid blending artifacts
+        if pil.mode in ("RGBA", "LA"):
+            pil = pil.convert("RGB")
         buf = io.BytesIO()
+        # Use PNG with low compression for speed; set optimize if you prefer smaller size
         pil.save(buf, format="PNG", compress_level=1)
         page.insert_image(rect, stream=buf.getvalue())
 

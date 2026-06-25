@@ -1,3 +1,4 @@
+
 api:
   anthropic_api_key: your_key_here
   openai_api_key: ''
@@ -11,6 +12,7 @@ api:
   max_tokens_correction: 4096
   max_tokens_analysis: 2048
   max_tokens_summary: 1024
+
 extraction:
   render_dpi: 300
   render_dpi_ocr: 400
@@ -22,6 +24,7 @@ extraction:
   extract_fonts: true
   table_extraction_method: all
   camelot_flavor: lattice
+
 enhancement:
   enable_denoising: true
   denoise_strength: 10.0
@@ -31,6 +34,8 @@ enhancement:
   enable_sharpening: true
   sharpen_sigma: 1.5
   sharpen_amount: 1.5
+
+  # Super-resolution
   enable_super_resolution: true
   sr_model: RealESRGAN_x4plus_anime
   sr_outscale: 4.0
@@ -38,14 +43,34 @@ enhancement:
   sr_tile_pad: 10
   sr_half: true
   sr_gpu_id: 0
+
+  # Selective SR (only upscale detected logo/diagram regions)
+  selective_sr: true
+  selective_sr_min_area: 100
+  selective_sr_min_contour_area: 100
+
+  # Vectorization / line-art
   enable_vectorization: true
   vectorize_threshold: 128
   vectorize_min_area: 50
+  # If using potrace, ensure the binary is installed on the system
+
+  # Face restoration
   enable_face_restoration: true
   face_model: GFPGANv1.4
+
+  # Output format / compression
   output_format: PNG
   jpeg_quality: 97
   png_compress: 1
+
+  # Logo / color preservation and final tuning
+  saturation_boost: 1.05
+  brightness_boost: 1.02
+  final_unsharp: true
+  final_unsharp_sigma: 1.0
+  final_unsharp_amount: 0.5
+
 ocr:
   engine_priority:
   - paddleocr
@@ -68,6 +93,7 @@ ocr:
   enable_spell_correction: true
   enable_grammar_fix: true
   enable_unicode_fix: true
+
 diagram:
   enable_ai_analysis: true
   enable_reconstruction: false
@@ -84,6 +110,7 @@ diagram:
   - map
   - photo
   - logo
+
 pipeline:
   pages: null
   skip_text_pages: false
