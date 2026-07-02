@@ -1,6 +1,6 @@
 # PDF AI Enhancer
 
-**Production-grade AI pipeline for enhancing PDFs with text and diagrams.**
+**AI pipeline for enhancing PDFs with text and diagrams.**
 
 Processes every page through a 5-stage AI pipeline: extraction → image super-resolution → multi-engine OCR correction → diagram vectorization → PDF reconstruction.
 

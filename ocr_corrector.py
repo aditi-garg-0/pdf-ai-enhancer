@@ -1,18 +1,4 @@
-"""
-ocr_corrector.py
-================
-Stage 3: Multi-engine OCR with AI-powered correction.
 
-For every page (or text block) that needs OCR:
-  1. Run up to 3 OCR engines in parallel: PaddleOCR, Tesseract, EasyOCR
-  2. Ensemble results using confidence-weighted voting
-  3. Fix encoding artifacts (ftfy)
-  4. SymSpell ultra-fast spelling correction
-  5. LanguageTool grammar correction
-  6. Claude AI: context-aware correction of remaining errors
-     (handles equations, domain-specific terms, layout artifacts)
-  7. Return corrected text with character-level confidence map
-"""
 
 from __future__ import annotations
 

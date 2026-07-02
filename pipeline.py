@@ -1,17 +1,4 @@
-"""
-pipeline.py
-===========
-Master orchestrator. Ties every stage together.
 
-Features:
-  - SQLite-backed checkpoint: resume interrupted runs from last page
-  - Parallel page processing with configurable worker count
-  - Live Rich progress dashboard
-  - Disk cache: API responses cached — re-runs are instant
-  - Graceful shutdown: Ctrl-C saves progress
-  - Batch mode: process an entire folder of PDFs
-  - CLI via Click with full option coverage
-"""
 
 from __future__ import annotations
 

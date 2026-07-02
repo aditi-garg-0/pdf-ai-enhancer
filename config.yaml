@@ -17,9 +17,9 @@ extraction:
   render_dpi: 300
   render_dpi_ocr: 400
   render_colorspace: RGB
-  text_density_threshold: 0.05
-  image_area_threshold: 0.1
-  diagram_aspect_ratio_min: 0.2
+  text_density_threshold: 0.0
+  image_area_threshold: 0.01
+  diagram_aspect_ratio_min: 0.05
   text_extract_mode: full
   extract_fonts: true
   table_extraction_method: all
